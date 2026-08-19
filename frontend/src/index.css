@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900;
+    font-family:
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      "PingFang SC",
+      "Hiragino Sans GB",
+      "Microsoft YaHei",
+      sans-serif;
+  }
+}
+
+/* 自定义细滚动条 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(203 213 225);
+  border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(148 163 184);
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Markdown 报告样式 */
+.markdown-body {
+  @apply text-sm leading-relaxed text-slate-800;
+  word-break: break-word;
+}
+.markdown-body h1 {
+  @apply mb-3 mt-6 border-b border-slate-200 pb-2 text-2xl font-bold text-slate-900;
+}
+.markdown-body h2 {
+  @apply mb-2 mt-5 text-xl font-semibold text-slate-900;
+}
+.markdown-body h3 {
+  @apply mb-2 mt-4 text-base font-semibold text-slate-900;
+}
+.markdown-body h4 {
+  @apply mb-1 mt-3 text-sm font-semibold text-slate-900;
+}
+.markdown-body p {
+  @apply my-2;
+}
+.markdown-body ul {
+  @apply my-2 list-disc space-y-1 pl-6;
+}
+.markdown-body ol {
+  @apply my-2 list-decimal space-y-1 pl-6;
+}
+.markdown-body li {
+  @apply my-0.5;
+}
+.markdown-body blockquote {
+  @apply my-3 border-l-4 border-slate-300 bg-slate-50 px-4 py-2 text-slate-600;
+}
+.markdown-body code {
+  @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.85em] text-slate-800;
+}
+.markdown-body pre {
+  @apply my-3 overflow-x-auto rounded-lg bg-slate-900 p-4 text-slate-100;
+}
+.markdown-body pre code {
+  @apply bg-transparent p-0 text-slate-100;
+}
+.markdown-body table {
+  @apply my-3 w-full border-collapse text-sm;
+}
+.markdown-body th {
+  @apply border border-slate-300 bg-slate-50 px-3 py-2 text-left font-semibold;
+}
+.markdown-body td {
+  @apply border border-slate-300 px-3 py-2;
+}
+.markdown-body a {
+  @apply text-blue-600 underline underline-offset-2 hover:text-blue-800;
+}
+.markdown-body hr {
+  @apply my-4 border-slate-200;
+}
+.markdown-body img {
+  @apply my-3 max-w-full rounded-lg;
+}

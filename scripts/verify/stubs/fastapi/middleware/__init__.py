@@ -1,0 +1,1 @@
+"""minimal fastapi.middleware stub"""

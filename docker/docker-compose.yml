@@ -1,0 +1,55 @@
+# 智研助手 Research Copilot —— 生产级一键部署（免费技术栈：PostgreSQL + pgvector 向量库 + 本地开源 Embedding）
+# 使用：cp .env.example .env（按需修改）后
+#       docker compose -f docker/docker-compose.yml up -d --build
+# 访问：http://localhost:8080
+services:
+  # PostgreSQL + pgvector 扩展：业务数据与向量库同一数据库（免费开源，无需额外向量库服务）
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: research
+      POSTGRES_PASSWORD: research
+      POSTGRES_DB: research
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U research -d research"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      args:
+        # 预下载的嵌入模型与 .env 中的 EMBEDDING_MODEL 保持一致（换模型后重建镜像即可自动预下载）
+        EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-small-zh-v1.5}
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      APP_ENV: production
+      DEBUG: "false"
+      # 容器内服务间使用服务名互通（PostgreSQL + pgvector）
+      DATABASE_URL: postgresql+asyncpg://research:research@postgres:5432/research
+      SYNC_DATABASE_URL: postgresql+psycopg2://research:research@postgres:5432/research
+      CORS_ORIGINS: http://localhost:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
