@@ -2,13 +2,16 @@
 
 研究主题：{topic}
 当前迭代轮次：{iteration}/{max_iterations}
+本轮新增资料数：{new_count}
 已收集资料：
 {results}
 
 分析要求：
 1. 判断信息是否充分：是否覆盖了主题的主要维度、是否有足够的数据与案例支撑；
-2. 无论如何，都要给出对已收集资料的综合提炼（synthesized_info），按维度组织要点，包含关键数据、结论，并用 [1]、[2] 等编号标注信息来源（编号对应下方"已收集资料"中的顺序）；
-3. 若信息不足，指出缺失的方向（missing_points）并给出下一轮搜索查询（next_queries）。
+2. 若本轮新增资料数为 0（new_count=0）或没有获取到任何新资料，说明继续搜索也难以获得新信息，应倾向判定信息已足够（information_sufficient: true），避免空转搜索；
+3. 无论如何，都要给出对已收集资料的综合提炼（synthesized_info），按维度组织要点，包含关键数据、结论，并用 [1]、[2] 等编号标注信息来源（编号对应下方"已收集资料"中的顺序）；
+4. 若信息不足，指出缺失的方向（missing_points）并给出下一轮搜索查询（next_queries）；next_queries 必须是与之前不同的新查询，不要重复已有查询；
+5. 对时效敏感的主题，优先采信时间较新的资料；若大部分资料时间陈旧（如 1 年前以上），在 synthesized_info 中明确指出资料时效性风险。
 
 请严格输出一个 JSON 对象（不要输出任何其他内容）：
 {{"information_sufficient": true, "synthesized_info": "综合提炼内容", "missing_points": ["缺失方向"], "next_queries": ["下一轮查询"]}}

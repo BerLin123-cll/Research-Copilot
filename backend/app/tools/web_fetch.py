@@ -4,6 +4,7 @@
 时可启用 Playwright 渲染动态页面（需额外安装 playwright 与 chromium）。
 """
 import logging
+import importlib
 import re
 from html.parser import HTMLParser
 from typing import Any
@@ -40,6 +41,34 @@ def _extract_title(html: str) -> str:
     return ""
 
 
+# 常见发布日期 meta 标签（article:published_time / datePublished / 等）
+_PUBLISH_META = re.compile(
+    r'<meta[^>]+(?:property|name)\s*=\s*["\']'
+    r"(?:article:published_time|datePublished|date|pubdate|og:published_time|"
+    r"sailthru\.date|publishdate|dc\.date|parsely-pub-date)[\"']"
+    r"[^>]*>",
+    re.I,
+)
+_META_CONTENT = re.compile(r'content\s*=\s*["\']([^"\']+)["\']', re.I)
+
+
+def _extract_published(html: str) -> str:
+    """尝试解析页面发布日期，返回 YYYY-MM-DD（无法解析返回空串）。"""
+    m = _PUBLISH_META.search(html)
+    if m:
+        c = _META_CONTENT.search(m.group(0))
+        if c:
+            val = c.group(1).strip()
+            if re.match(r"^\d{4}-\d{2}-\d{2}", val):
+                return val[:10]
+            return val[:50]
+    # 兜底：正文前 4000 字符内的常见日期写法
+    m2 = re.search(r"(20\d{2})[-/年](\d{1,2})[-/月](\d{1,2})", html[:4000])
+    if m2:
+        return f"{m2.group(1)}-{int(m2.group(2)):02d}-{int(m2.group(3)):02d}"
+    return ""
+
+
 def _extract_readable(html: str) -> str:
     """用 readability 提取正文，失败时回退到纯文本剥离。"""
     try:
@@ -56,7 +85,7 @@ def _extract_readable(html: str) -> str:
 
 
 async def fetch_webpage(url: str) -> dict[str, Any]:
-    """抓取网页正文，返回 {url, title, content, error?}。"""
+    """抓取网页正文，返回 {url, title, content, published?, error?}。"""
     s = get_settings()
     html = ""
 
@@ -68,7 +97,12 @@ async def fetch_webpage(url: str) -> dict[str, Any]:
         return {"url": url, "title": "", "content": "", "error": "抓取失败"}
 
     content = _extract_readable(html)
-    return {"url": url, "title": _extract_title(html), "content": content}
+    return {
+        "url": url,
+        "title": _extract_title(html),
+        "content": content,
+        "published": _extract_published(html),
+    }
 
 
 async def _fetch_httpx(url: str) -> str:
@@ -88,7 +122,9 @@ async def _fetch_httpx(url: str) -> str:
 async def _fetch_playwright(url: str) -> str:
     """可选：Playwright 渲染动态页面。"""
     try:
-        from playwright.async_api import async_playwright
+        async_playwright = importlib.import_module(
+            "playwright.async_api"
+        ).async_playwright
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)

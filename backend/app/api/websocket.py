@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websocket"])
 
+# 终止类事件：收到后服务端关闭连接，队列随 unsubscribe 清理，避免残留订阅
+_TERMINAL_EVENTS = {"done", "error", "cancelled"}
+
 
 @router.websocket("/ws/research/{task_id}")
 async def ws_research(websocket: WebSocket, task_id: str):
@@ -33,6 +36,9 @@ async def ws_research(websocket: WebSocket, task_id: str):
             event = await queue.get()
             try:
                 await websocket.send_json(event)
+                # 任务已结束（done/error/cancelled）→ 主动关闭连接
+                if event.get("type") in _TERMINAL_EVENTS:
+                    break
             except WebSocketDisconnect:
                 break
     except asyncio.CancelledError:

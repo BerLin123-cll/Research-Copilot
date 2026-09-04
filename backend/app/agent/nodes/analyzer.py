@@ -19,8 +19,29 @@ def _build_results_text(raw_results: list[dict]) -> str:
     for i, r in enumerate(raw_results[: _MAX_RESULTS_FOR_LLM], start=1):
         title = r.get("title") or r.get("url") or ""
         snippet = r.get("snippet") or r.get("content", "")[:300]
-        lines.append(f"[{i}] ({r.get('type', 'unknown')}) {title}\n    {snippet}")
+        published = r.get("published") or ""
+        date_part = f", {published[:10]}" if published else ""
+        lines.append(f"[{i}] ({r.get('type', 'unknown')}{date_part}) {title}\n    {snippet}")
     return "\n".join(lines)
+
+
+def _is_new_query(query: str, prev_queries: list[str]) -> bool:
+    """判断查询是否与已有查询重复（归一化完全相等，或一方被另一方包含）。"""
+    q = (query or "").strip().lower()
+    if not q:
+        return False
+    for p in prev_queries:
+        pn = (p or "").strip().lower()
+        if not pn:
+            continue
+        if q == pn:
+            return False
+        # 长查询间互相包含视为近似重复（如"2025 最新进展" vs "最新进展 2025"）
+        if len(q) >= 4 and q in pn:
+            return False
+        if len(pn) >= 4 and pn in q:
+            return False
+    return True
 
 
 def make_analyzer(ctx) -> object:
@@ -31,6 +52,7 @@ def make_analyzer(ctx) -> object:
         task_id = state["task_id"]
         iteration = state.get("iterations", 1)
         max_iterations = state.get("max_iterations", 3)
+        new_count = state.get("last_round_new_count", 0)
 
         await bus.publish(task_id, EventBus.node_event("start", "analyzer"))
         await bus.publish(task_id, EventBus.status_event("running", "正在综合分析资料…"))
@@ -40,6 +62,7 @@ def make_analyzer(ctx) -> object:
             topic=state["topic"],
             iteration=iteration,
             max_iterations=max_iterations,
+            new_count=new_count,
             results=results_text or "（无资料）",
         )
 
@@ -59,6 +82,17 @@ def make_analyzer(ctx) -> object:
         # 已达最大迭代时强制进入报告阶段
         if iteration >= max_iterations:
             info_sufficient = True
+
+        # 防空转：连续空轮（本轮无新增资料且已搜过 ≥2 轮）→ 强制进入报告
+        if new_count == 0 and iteration >= 2:
+            info_sufficient = True
+
+        # 查询去重：过滤掉与已有查询重复的下一轮查询；去重后无新查询 → 强制报告
+        if not info_sufficient:
+            prev_queries = [str(q) for q in (state.get("search_queries") or [])]
+            next_queries = [q for q in next_queries if _is_new_query(q, prev_queries)]
+            if not next_queries:
+                info_sufficient = True
 
         await bus.publish(
             task_id,

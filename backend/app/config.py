@@ -52,6 +52,25 @@ class Settings(BaseSettings):
     # 单个研究任务写入知识库的最大分块数（防止膨胀）
     research_kb_max_chunks: int = 30
 
+    # ---------- 搜索新鲜度 ----------
+    # DDG 时间过滤：""（不限）| d=一天内 | w=一周内 | m=一个月内 | y=一年内
+    web_search_timelimit: str = ""
+    # 同时发起的 DuckDuckGo 搜索并发数上限（防止同 IP 被限流）
+    web_search_max_concurrency: int = 2
+    # arXiv 排序：relevance=相关度 | submitted_date=最新提交优先 | updated_date=最近更新优先
+    arxiv_sort_by: str = "relevance"
+
+    # ---------- 并发与超时 ----------
+    # 同时运行的研究任务上限（超出排队等待，状态保持 pending）
+    max_concurrent_research: int = 3
+    # 单个研究任务整图执行的看门狗超时（秒），超时标记为 failed
+    agent_task_timeout: float = 900.0
+    # LLM 单次请求超时（秒）与失败重试次数（429/5xx 指数退避）
+    llm_timeout: float = 120.0
+    llm_max_retries: int = 3
+    # 同步阻塞工具（DDG / arXiv）单次调用超时（秒）
+    tool_timeout: float = 30.0
+
     # ---------- 端口 ----------
     backend_port: int = 8000
     frontend_port: int = 8080

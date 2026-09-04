@@ -29,6 +29,9 @@ qdrant_storage/
 qdrant_data/
 backend/.deps_installed
 
+# ---- 本地工具临时目录（如 pip 安装残留） ----
+.pip-tmp/
+
 # ---- IDE / OS ----
 .idea/
 .vscode/

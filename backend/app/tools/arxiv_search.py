@@ -15,11 +15,13 @@ except ImportError:  # pragma: no cover
 async def arxiv_search(
     query: str,
     max_results: int | None = None,
-    sort_by: str = "relevance",
+    sort_by: str | None = None,
 ) -> list[dict[str, Any]]:
     """搜索 arXiv 论文，返回 [{title, authors, summary, url, published}]。"""
     s = get_settings()
     max_results = max_results or s.arxiv_max_results
+    # 排序默认取配置（relevance | submitted_date | updated_date），可用参数覆盖
+    sort_by = sort_by or s.arxiv_sort_by
     if arxiv is None:
         logger.warning("arxiv 包未安装，arxiv_search 不可用")
         return []
@@ -54,7 +56,10 @@ async def arxiv_search(
     try:
         import asyncio
 
-        return await asyncio.to_thread(_run)
+        return await asyncio.wait_for(asyncio.to_thread(_run), timeout=s.tool_timeout)
+    except asyncio.TimeoutError:
+        logger.warning("arxiv_search 超时: %s (query=%s)", s.tool_timeout, query)
+        return []
     except Exception as e:  # noqa: BLE001
         logger.warning("arxiv_search 失败: %s (query=%s)", e, query)
         return []

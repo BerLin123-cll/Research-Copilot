@@ -9,7 +9,11 @@ from app.api.schemas import ReportOut, ResearchCreate, ResearchOut
 from app.core.database import get_db
 from app.models.report import Report
 from app.models.research import ResearchTask
-from app.services.research_service import schedule_research
+from app.services.research_service import (
+    cancel_research,
+    get_running_task,
+    schedule_research,
+)
 
 router = APIRouter(prefix="/api/research", tags=["research"])
 
@@ -53,11 +57,29 @@ async def get_task_report(task_id: str, db: AsyncSession = Depends(get_db)):
     return report.to_dict()
 
 
+@router.post("/{task_id}/cancel")
+async def cancel_task(task_id: str, db: AsyncSession = Depends(get_db)):
+    """取消运行中/排队中的研究任务。"""
+    task = await db.get(ResearchTask, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="研究任务不存在")
+    if task.status in ("completed", "failed", "cancelled"):
+        return {"ok": True, "status": task.status, "already_terminal": True}
+    if cancel_research(task_id):
+        return {"ok": True, "status": "cancelling", "already_terminal": False}
+    # 注册表中不存在（例如进程重启后的遗留 running 状态）→ 直接置为 cancelled
+    task.status = "cancelled"
+    await db.commit()
+    return {"ok": True, "status": "cancelled", "already_terminal": False}
+
+
 @router.delete("/{task_id}")
 async def delete_research(task_id: str, db: AsyncSession = Depends(get_db)):
     task = await db.get(ResearchTask, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="研究任务不存在")
+    # 删除前先尝试取消正在运行/排队中的任务，避免后台继续执行
+    cancel_research(task_id)
     await db.delete(task)
     await db.commit()
     return {"ok": True, "deleted": task_id}

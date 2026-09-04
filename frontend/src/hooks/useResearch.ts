@@ -8,8 +8,9 @@ export function useResearch() {
   const fetchTasks = useResearchStore((s) => s.fetchTasks);
   const fetchTask = useResearchStore((s) => s.fetchTask);
   const createResearch = useResearchStore((s) => s.createResearch);
+  const cancelResearch = useResearchStore((s) => s.cancelResearch);
   const deleteResearch = useResearchStore((s) => s.deleteResearch);
   const fetchReport = useResearchStore((s) => s.fetchReport);
 
-  return { fetchTasks, fetchTask, createResearch, deleteResearch, fetchReport };
+  return { fetchTasks, fetchTask, createResearch, cancelResearch, deleteResearch, fetchReport };
 }

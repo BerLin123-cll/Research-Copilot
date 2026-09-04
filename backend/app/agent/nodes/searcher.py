@@ -108,6 +108,7 @@ def make_searcher(ctx) -> object:
                         "url": url,
                         "title": page.get("title", ""),
                         "content": content[:8000],
+                        "published": page.get("published") or "",
                     }
                     raw_results.append(item)
                     new_results.append(item)
@@ -117,7 +118,11 @@ def make_searcher(ctx) -> object:
         for r in raw_results:
             if r.get("type") in ("web", "arxiv", "page"):
                 source_items.append(
-                    {"title": r.get("title", "") or r.get("url", ""), "url": r.get("url", "")}
+                    {
+                        "title": r.get("title", "") or r.get("url", ""),
+                        "url": r.get("url", ""),
+                        "published": r.get("published"),
+                    }
                 )
         sources, _ = append_unique_sources(sources, source_items)
 
@@ -176,6 +181,7 @@ def make_searcher(ctx) -> object:
             "sources": sources,
             "kb_chunks_saved": kb_chunks_saved,
             "current_step": iteration,
+            "last_round_new_count": len(new_results),
         }
 
     return searcher

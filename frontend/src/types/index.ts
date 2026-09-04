@@ -2,11 +2,11 @@
 export interface ResearchTask {
   id: string;
   topic: string;
-  status: "pending" | "running" | "completed" | "failed";
+  status: "pending" | "running" | "completed" | "failed" | "cancelled";
   plan: string[];
   current_step: number;
   search_queries: string[];
-  sources: { title: string; url: string }[];
+  sources: { title: string; url: string; published?: string | null }[];
   error: string | null;
   report_id: string | null;
   created_at: string | null;
@@ -61,6 +61,8 @@ export type AgentEvent =
   | { type: "tool_call"; tool: string; input: Record<string, unknown>; timestamp: string }
   | { type: "tool_result"; tool: string; output: Record<string, unknown>; success: boolean; timestamp: string }
   | { type: "analysis"; information_sufficient: boolean; synthesized_info: string }
+  | { type: "rejection"; reason: string }
   | { type: "report_ready"; report_id: string }
   | { type: "error"; message: string }
+  | { type: "cancelled"; task_id: string }
   | { type: "done"; task_id: string };

@@ -38,6 +38,7 @@ export const taskStatusMeta: Record<
   running: { label: "进行中", tone: "info", icon: "⏳" },
   completed: { label: "已完成", tone: "success", icon: "✅" },
   failed: { label: "失败", tone: "danger", icon: "❌" },
+  cancelled: { label: "已取消", tone: "neutral", icon: "⏹️" },
 };
 
 /** 文档状态（后端字符串）→ 文案/色板 */

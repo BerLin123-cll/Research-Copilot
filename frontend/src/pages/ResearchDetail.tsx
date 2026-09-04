@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ResearchTimeline } from "../components/research/ResearchTimeline";
 import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Skeleton } from "../components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -21,13 +22,15 @@ export function ResearchDetail() {
   const { id } = useParams<{ id: string }>();
   const taskId = id ?? "";
 
-  const { fetchTask, fetchReport } = useResearch();
+  const { fetchTask, fetchReport, cancelResearch } = useResearch();
   const currentTask = useResearchStore((s) => s.currentTask);
+  const events = useResearchStore((s) => s.events);
   const wsConnected = useWebSocket(taskId);
 
   const [tab, setTab] = useState("timeline");
   const [report, setReport] = useState<Report | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // 进入页面：连接 WS（useWebSocket 负责）并加载任务
   useEffect(() => {
@@ -60,6 +63,17 @@ export function ResearchDetail() {
   }
 
   const meta = taskStatusMeta[currentTask.status];
+  const canCancel = currentTask.status === "pending" || currentTask.status === "running";
+  const rejection = [...events].reverse().find((e) => e.type === "rejection");
+
+  const handleCancel = async () => {
+    if (!canCancel || cancelling) return;
+    setCancelling(true);
+    await cancelResearch(currentTask.id);
+    // 取消请求已发出；状态变更由 cancelled 事件/轮询刷新，稍后兜底刷新一次
+    window.setTimeout(() => void fetchTask(currentTask.id), 1500);
+    setCancelling(false);
+  };
 
   return (
     <div className="space-y-5">
@@ -77,6 +91,18 @@ export function ResearchDetail() {
             <span>{meta.icon}</span>
             {meta.label}
           </Badge>
+          {canCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              loading={cancelling}
+              disabled={cancelling}
+              onClick={() => void handleCancel()}
+              className="text-slate-600 hover:text-red-600"
+            >
+              ⏹️ 取消任务
+            </Button>
+          )}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
           <span>
@@ -95,6 +121,11 @@ export function ResearchDetail() {
             {wsConnected ? "实时连接" : "未连接"}
           </span>
         </div>
+        {rejection && (
+          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            🚫 该输入不适合作为深度研究主题：{rejection.reason}
+          </p>
+        )}
         {currentTask.error && (
           <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             ❌ {currentTask.error}

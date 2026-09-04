@@ -25,7 +25,12 @@ def build_graph(ctx) -> object:
     graph.add_node("reporter", make_reporter(ctx))
 
     graph.set_entry_point("planner")
-    graph.add_edge("planner", "searcher")
+    # 话题闸门：不可研究 → 直接 END（planner 已产出说明性报告）；可研究 → searcher
+    graph.add_conditional_edges(
+        "planner",
+        lambda state: "searcher" if state.get("researchable", True) else "end",
+        {"searcher": "searcher", "end": END},
+    )
     graph.add_edge("searcher", "analyzer")
     graph.add_conditional_edges(
         "analyzer",

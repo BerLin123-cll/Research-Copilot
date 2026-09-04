@@ -24,7 +24,16 @@ function upsertTask(list: ResearchTask[], task: ResearchTask): ResearchTask[] {
   return next;
 }
 
-const TASK_STATUSES: ResearchTask["status"][] = ["pending", "running", "completed", "failed"];
+const TASK_STATUSES: ResearchTask["status"][] = [
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+];
+
+/** 终态：收到后无需再订阅实时事件，断开 WS 防止残留连接 */
+const TERMINAL_STATUSES: ResearchTask["status"][] = ["completed", "failed", "cancelled"];
 
 interface ResearchStore {
   tasks: ResearchTask[];
@@ -37,6 +46,7 @@ interface ResearchStore {
   fetchTasks: () => Promise<void>;
   fetchTask: (id: string) => Promise<ResearchTask | null>;
   createResearch: (topic: string) => Promise<ResearchTask | null>;
+  cancelResearch: (id: string) => Promise<boolean>;
   deleteResearch: (id: string) => Promise<boolean>;
   fetchReport: (taskId: string) => Promise<Report | null>;
   connectWS: (taskId: string) => void;
@@ -82,6 +92,15 @@ export const useResearchStore = create<ResearchStore>()((set, get) => ({
       return task;
     } catch {
       return null;
+    }
+  },
+
+  cancelResearch: async (id) => {
+    try {
+      await api.cancelResearch(id);
+      return true;
+    } catch {
+      return false;
     }
   },
 
@@ -152,6 +171,8 @@ export const useResearchStore = create<ResearchStore>()((set, get) => ({
     switch (ev.type) {
       case "snapshot": {
         set({ currentTask: ev.task, tasks: upsertTask(get().tasks, ev.task) });
+        // 任务已是终态 → 无需保持实时连接
+        if (TERMINAL_STATUSES.includes(ev.task.status)) get().disconnectWS();
         break;
       }
       case "status": {
@@ -191,6 +212,11 @@ export const useResearchStore = create<ResearchStore>()((set, get) => ({
         if (tid) void get().fetchTask(tid);
         break;
       }
+      case "rejection": {
+        // 话题闸门：输入不适合深度研究，已产出说明性报告
+        set({ events: [...get().events, ev] });
+        break;
+      }
       case "error": {
         set({ events: [...get().events, ev] });
         const t = get().currentTask;
@@ -198,11 +224,25 @@ export const useResearchStore = create<ResearchStore>()((set, get) => ({
           const updated: ResearchTask = { ...t, error: ev.message, status: "failed" };
           set({ currentTask: updated, tasks: upsertTask(get().tasks, updated) });
         }
+        get().disconnectWS();
+        break;
+      }
+      case "cancelled": {
+        set({ events: [...get().events, ev] });
+        const t = get().currentTask;
+        if (t) {
+          const updated: ResearchTask = { ...t, status: "cancelled" };
+          set({ currentTask: updated, tasks: upsertTask(get().tasks, updated) });
+        }
+        void get().fetchTask(ev.task_id);
+        get().disconnectWS();
         break;
       }
       case "done": {
         set({ events: [...get().events, ev] });
         void get().fetchTask(ev.task_id);
+        // 任务已结束，服务端也会关闭连接；主动断开避免重连循环
+        get().disconnectWS();
         break;
       }
     }

@@ -16,7 +16,9 @@ _PROMPT = load_prompt("reporter_prompt.txt")
 def _format_sources(sources: list[dict]) -> str:
     lines = []
     for i, s in enumerate(sources, start=1):
-        lines.append(f"[{i}] {s.get('title', '')} — {s.get('url', '')}")
+        published = s.get("published") or ""
+        date_part = f"（{published[:10]}）" if published else ""
+        lines.append(f"[{i}] {s.get('title', '')} — {s.get('url', '')}{date_part}")
     return "\n".join(lines) or "（无）"
 
 

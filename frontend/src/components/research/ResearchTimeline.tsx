@@ -24,6 +24,7 @@ function nodeMeta(node: string): { label: string; icon: string } {
 type ToolCallEvent = Extract<AgentEvent, { type: "tool_call" }>;
 type ToolResultEvent = Extract<AgentEvent, { type: "tool_result" }>;
 type AnalysisEvent = Extract<AgentEvent, { type: "analysis" }>;
+type RejectionEvent = Extract<AgentEvent, { type: "rejection" }>;
 
 type Block =
   | { kind: "node_start"; node: string; timestamp: string }
@@ -32,8 +33,10 @@ type Block =
   | { kind: "status"; message: string }
   | { kind: "tool_call"; call: ToolCallEvent; result: ToolResultEvent | null }
   | { kind: "analysis"; info: AnalysisEvent }
+  | { kind: "rejection"; info: RejectionEvent }
   | { kind: "report_ready"; reportId: string }
   | { kind: "error"; message: string }
+  | { kind: "cancelled"; taskId: string }
   | { kind: "done"; taskId: string };
 
 /** 将原始事件流整理为有序 Block 列表；tool_result 就近合并进同名 tool_call */
@@ -74,11 +77,17 @@ function buildBlocks(events: AgentEvent[]): Block[] {
       case "analysis":
         blocks.push({ kind: "analysis", info: ev });
         break;
+      case "rejection":
+        blocks.push({ kind: "rejection", info: ev });
+        break;
       case "report_ready":
         blocks.push({ kind: "report_ready", reportId: ev.report_id });
         break;
       case "error":
         blocks.push({ kind: "error", message: ev.message });
+        break;
+      case "cancelled":
+        blocks.push({ kind: "cancelled", taskId: ev.task_id });
         break;
       case "done":
         blocks.push({ kind: "done", taskId: ev.task_id });
@@ -161,6 +170,14 @@ function renderBlock(b: Block): ReactNode {
           <p className="whitespace-pre-wrap text-sm text-slate-700">{b.info.synthesized_info}</p>
         </div>
       );
+    case "rejection":
+      return (
+        <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3">
+          <p className="mb-1 text-xs font-medium text-amber-700">🚫 不适合深度研究</p>
+          <p className="text-sm text-slate-700">{b.info.reason}</p>
+          <p className="mt-1 text-xs text-slate-500">已跳过搜索流程，生成说明性结果。</p>
+        </div>
+      );
     case "report_ready":
       return (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
@@ -171,6 +188,12 @@ function renderBlock(b: Block): ReactNode {
       return (
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           ❌ {b.message}
+        </p>
+      );
+    case "cancelled":
+      return (
+        <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          ⏹️ 任务已被取消
         </p>
       );
     case "done":

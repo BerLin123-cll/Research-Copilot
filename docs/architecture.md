@@ -35,10 +35,10 @@
                                    └──────────▶ searcher（下一轮查询）
 ```
 
-- **planner**：LLM（JSON mode）将主题分解为计划步骤与搜索查询，失败时使用兜底方案。
-- **searcher**：对每条查询执行 `web_search`（DuckDuckGo）+ `arxiv_search`（arXiv）+ 预算内 `fetch_webpage`；结果按 URL 去重进入 `sources`；研究资料（可选）分块向量化写入 pgvector（`source_type="research"`），供后续深度问答。
-- **analyzer**：LLM 综合已有资料，判断 `information_sufficient`，输出综合提炼与（不足时的）下一轮查询；达到 `AGENT_MAX_ITERATIONS` 时强制进入报告阶段。
-- **reporter**：LLM 生成结构化 Markdown 报告，落库 `reports` 表并关联任务；发布 `report_ready` / `done` 事件。
+- **planner**：LLM（JSON mode）先判定话题是否适合深度研究（话题闸门），不适合时直接产出说明性结果并结束任务（发布 `rejection` 事件），不进入搜索；适合时分解为计划步骤与搜索查询，失败时使用兜底方案。
+- **searcher**：对每条查询执行 `web_search`（DuckDuckGo）+ `arxiv_search`（arXiv）+ 预算内 `fetch_webpage`；结果按 URL 去重进入 `sources`；研究资料（可选）分块向量化写入 pgvector（`source_type="research"`），供后续深度问答；返回本轮新增资料数供 analyzer 防空转。
+- **analyzer**：LLM 综合已有资料，判断 `information_sufficient`，输出综合提炼与（不足时的）下一轮查询；下一轮查询与已有查询去重，去重后为空则强制进入报告；达到 `AGENT_MAX_ITERATIONS` 或连续空轮（≥2 轮无新增资料）时强制进入报告阶段。
+- **reporter**：LLM 生成结构化 Markdown 报告，包含"信息时效性说明"小节（资料时间跨度 / 信息截止日期），落库 `reports` 表并关联任务；发布 `report_ready` / `done` 事件。
 
 ## 3. 实时事件流（WebSocket，无 Redis）
 
@@ -81,3 +81,14 @@
 | 研究原始结果不进表 | `raw_results` 仅存在于图状态（内存），持久化的是去重后的 `sources`，避免膨胀 |
 | 网页抓取 httpx 为主 | Playwright 作为可选依赖，默认关闭 |
 | nginx 配置并入前端镜像 | 保持 docker build 上下文精简（原文档 docker/nginx.conf 的位置调整） |
+
+## 7. 健壮性设计（话题闸门 / 新鲜度 / 并发防护）
+
+| 关注点 | 机制 |
+|---|---|
+| 非研究话题死循环 | planner 话题闸门：`researchable=false` 直接产出说明性结果结束任务，不进入搜索；图本身有 `AGENT_MAX_ITERATIONS`（默认 3）硬上限，迭代计数严格递增，必然终止 |
+| 搜索内容过旧 | `WEB_SEARCH_TIMELIMIT`（DDG 时间过滤，默认不限）、`ARXIV_SORT_BY` 可配；网页抓取解析发布日期并贯穿 sources/analyzer/reporter；analyzer 优先采信近期资料；报告输出"信息时效性说明"；planner 对时效主题自动加时间限定词 |
+| 多任务并发互相干扰 | `MAX_CONCURRENT_RESEARCH`（默认 3）全局信号量排队；`WEB_SEARCH_MAX_CONCURRENCY`（默认 2）限制 DDG 并发防限流；任务间状态/会话/事件总线按 task_id 隔离 |
+| 任务卡死 | `AGENT_TASK_TIMEOUT`（默认 900s）整图看门狗；`LLM_TIMEOUT`（120s）+ 429/5xx 指数退避重试；`TOOL_TIMEOUT`（30s）保护同步阻塞工具；超时任务标记 failed 并发事件 |
+| 任务取消 | `POST /api/research/{task_id}/cancel` + task 注册表，取消后标记 `cancelled`；DELETE 顺带取消 |
+| 残留连接 | WebSocket 收到终止事件（done/error/cancelled）后主动关闭，事件队列随 unsubscribe 清理；前端收到终态快照/事件后断开连接 |

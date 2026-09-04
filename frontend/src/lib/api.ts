@@ -56,6 +56,12 @@ export const api = {
   /** 任务报告 */
   getReport: (taskId: string) => request<Report>(`/research/${encodeURIComponent(taskId)}/report`),
 
+  /** 取消任务（运行中/排队中） */
+  cancelResearch: (id: string) =>
+    request<{ ok: true; status: string }>(`/research/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+    }),
+
   /** 删除任务 */
   deleteResearch: (id: string) =>
     request<{ ok: true }>(`/research/${encodeURIComponent(id)}`, { method: "DELETE" }),

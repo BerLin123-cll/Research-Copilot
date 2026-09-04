@@ -38,8 +38,12 @@ Base URL：开发环境 `http://localhost:8000`；Docker 部署 `http://localhos
 ### 任务报告 `GET /api/research/{task_id}/report`
 返回 `{"id", "task_id", "title", "content"(Markdown), "summary", "created_at"}`；任务无报告时 404。
 
+### 取消任务 `POST /api/research/{task_id}/cancel`
+取消运行中/排队中的任务，返回 `{"ok": true, "status": "cancelling|cancelled", "already_terminal": bool}`。
+已处于终态（completed/failed/cancelled）时直接返回当前状态。
+
 ### 删除任务 `DELETE /api/research/{task_id}`
-返回 `{"ok": true, "deleted": task_id}`。
+返回 `{"ok": true, "deleted": task_id}`；删除前会先尝试取消正在运行的任务。
 
 ## 3. 知识库
 
@@ -90,9 +94,13 @@ Base URL：开发环境 `http://localhost:8000`；Docker 部署 `http://localhos
 | `tool_call` | tool, input, timestamp | 工具调用（web_search / arxiv_search / fetch_webpage / knowledge_base_sync） |
 | `tool_result` | tool, output, success, timestamp | 工具结果 |
 | `analysis` | information_sufficient, synthesized_info | 分析结论 |
+| `rejection` | reason | 话题闸门：输入不适合深度研究（已跳过搜索） |
 | `report_ready` | report_id | 报告已生成 |
 | `error` | message | 任务失败 |
-| `done` | task_id | 任务结束（成功或失败） |
+| `cancelled` | task_id | 任务已被取消 |
+| `done` | task_id | 任务结束（成功/失败/取消/拒绝） |
+
+> 收到 `done` / `error` / `cancelled` 任一终止事件后，服务端会主动关闭连接。
 
 事件示例：
 ```json

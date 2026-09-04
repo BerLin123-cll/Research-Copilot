@@ -17,7 +17,7 @@ class ResearchTask(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     topic: Mapped[str] = mapped_column(String(500))
-    # pending | running | completed | failed
+    # pending | running | completed | failed | cancelled
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
     plan: Mapped[list] = mapped_column(JSON, default=list)
     current_step: Mapped[int] = mapped_column(Integer, default=0)
