@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { MessageSquare, Plus } from "lucide-react";
 import type { ChatMessage, DocumentItem } from "../../types";
 import { api } from "../../lib/api";
 import { cn, formatDateTime } from "../../lib/utils";
@@ -100,7 +101,7 @@ export function ChatWithDocs({ documents }: ChatWithDocsProps) {
         id: crypto.randomUUID(),
         session_id: sessionId,
         role: "assistant",
-        content: `⚠️ 请求失败：${e instanceof Error ? e.message : "未知错误"}`,
+        content: `请求失败：${e instanceof Error ? e.message : "未知错误"}`,
         citations: [],
         created_at: new Date().toISOString(),
       };
@@ -146,7 +147,7 @@ export function ChatWithDocs({ documents }: ChatWithDocsProps) {
               type="button"
               onClick={() => onToggle(idx)}
               title={`查看引用来源：${cite.filename}`}
-              className="mx-0.5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-1.5 py-0.5 align-baseline text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+              className="mx-0.5 inline-flex items-center rounded-full border border-indigo-400/30 bg-indigo-500/15 px-1.5 py-0.5 align-baseline text-[11px] font-semibold text-indigo-300 transition-colors hover:bg-indigo-500/25"
             >
               {idx}
             </button>
@@ -160,12 +161,15 @@ export function ChatWithDocs({ documents }: ChatWithDocsProps) {
   return (
     <Card className="flex h-[640px] flex-col">
       {/* 头部 */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-4 py-3">
-        <h3 className="text-sm font-semibold text-slate-800">💬 知识库问答</h3>
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-700/30 px-4 py-3">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-100">
+          <MessageSquare className="h-4 w-4 text-indigo-400" />
+          知识库问答
+        </h3>
         <select
           value={docFilter}
           onChange={(e) => setDocFilter(e.target.value)}
-          className="ml-auto h-8 rounded-lg border border-slate-300 bg-white px-2 text-xs text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+          className="ml-auto h-8 rounded-lg border border-slate-600/30 bg-slate-900/40 px-2 text-xs text-slate-300 focus:border-indigo-500/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           title="限定检索范围"
         >
           <option value="">全部文档</option>
@@ -176,7 +180,8 @@ export function ChatWithDocs({ documents }: ChatWithDocsProps) {
           ))}
         </select>
         <Button variant="outline" size="sm" onClick={newSession}>
-          🆕 新会话
+          <Plus className="mr-1 h-4 w-4" />
+          新会话
         </Button>
       </div>
 
@@ -188,9 +193,9 @@ export function ChatWithDocs({ documents }: ChatWithDocsProps) {
             <Skeleton className="h-20 w-2/3 rounded-2xl" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center px-6 text-center text-sm text-slate-400">
+          <div className="flex h-full items-center justify-center px-6 text-center text-sm text-slate-500">
             <div>
-              <p className="mb-2 text-2xl">📚</p>
+              <MessageSquare className="mx-auto mb-2 h-8 w-8 text-slate-600" />
               向知识库提问吧！
               <br />
               例如：这篇文档的核心观点是什么？
@@ -208,8 +213,8 @@ export function ChatWithDocs({ documents }: ChatWithDocsProps) {
                       className={cn(
                         "inline-block rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
                         isUser
-                          ? "bg-blue-600 text-white"
-                          : "border border-slate-200 bg-white text-slate-800",
+                          ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/20"
+                          : "border border-slate-600/30 bg-slate-900/40 text-slate-100",
                       )}
                     >
                       {isUser ? (
@@ -222,7 +227,7 @@ export function ChatWithDocs({ documents }: ChatWithDocsProps) {
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 px-1 text-[11px] text-slate-400">
+                    <p className="mt-1 px-1 text-[11px] text-slate-500">
                       {formatDateTime(msg.created_at)}
                       {!isUser && msg.citations.length > 0 && ` · ${msg.citations.length} 条引用`}
                     </p>
@@ -236,19 +241,19 @@ export function ChatWithDocs({ documents }: ChatWithDocsProps) {
                           return (
                             <div
                               key={ci}
-                              className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-left"
+                              className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-left"
                             >
-                              <div className="mb-1 flex flex-wrap items-center gap-2 text-amber-900">
+                              <div className="mb-1 flex flex-wrap items-center gap-2 text-amber-200">
                                 <span className="text-xs font-semibold">引用 [{cite.index}]</span>
                                 <span className="max-w-48 truncate text-xs">{cite.filename}</span>
                                 <Badge variant="outline" className="ml-auto shrink-0">
                                   相关度 {typeof cite.score === "number" ? cite.score.toFixed(3) : "—"}
                                 </Badge>
                               </div>
-                              <p className="line-clamp-4 text-xs leading-relaxed text-slate-600">
+                              <p className="line-clamp-4 text-xs leading-relaxed text-slate-300">
                                 {cite.snippet}
                               </p>
-                              <p className="mt-1 break-all font-mono text-[10px] text-amber-700/70">
+                              <p className="mt-1 break-all font-mono text-[10px] text-amber-300/70">
                                 {cite.document_id}
                               </p>
                             </div>
@@ -271,7 +276,7 @@ export function ChatWithDocs({ documents }: ChatWithDocsProps) {
           e.preventDefault();
           void send();
         }}
-        className="flex items-center gap-2 border-t border-slate-200 p-3"
+        className="flex items-center gap-2 border-t border-slate-700/30 p-3"
       >
         <Input
           value={question}

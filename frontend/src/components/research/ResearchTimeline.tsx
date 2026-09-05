@@ -1,4 +1,5 @@
 import { Fragment, useMemo, type ReactNode } from "react";
+import { Calendar } from "lucide-react";
 import type { AgentEvent } from "../../types";
 import { useResearchStore } from "../../stores/researchStore";
 import { ToolCallCard } from "./ToolCallCard";
@@ -18,7 +19,7 @@ const NODE_META: Record<string, { label: string; icon: string }> = {
 
 function nodeMeta(node: string): { label: string; icon: string } {
   const key = Object.keys(NODE_META).find((k) => node.toLowerCase().includes(k));
-  return key ? NODE_META[key] : { label: node, icon: "🔧" };
+  return key ? NODE_META[key] : { label: node, icon: "" };
 }
 
 type ToolCallEvent = Extract<AgentEvent, { type: "tool_call" }>;
@@ -132,18 +133,18 @@ function renderBlock(b: Block): ReactNode {
       return null;
     case "node_end":
       return (
-        <p className="text-xs text-slate-400">
-          ———— {nodeMeta(b.node).label} 结束
+        <p className="text-xs text-slate-500">
+          —— {nodeMeta(b.node).label} 结束
         </p>
       );
     case "plan":
       return (
-        <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3">
-          <p className="mb-1.5 text-xs font-medium text-blue-700">📋 研究计划</p>
+        <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/10 p-3">
+          <p className="mb-1.5 text-xs font-medium text-indigo-300">📋 研究计划</p>
           <ol className="space-y-1">
             {b.steps.map((s, si) => (
-              <li key={si} className="flex gap-2 text-sm text-slate-700">
-                <span className="shrink-0 font-medium text-blue-600">{si + 1}.</span>
+              <li key={si} className="flex gap-2 text-sm text-slate-300">
+                <span className="shrink-0 font-medium text-indigo-400">{si + 1}.</span>
                 <span>{s}</span>
               </li>
             ))}
@@ -152,54 +153,54 @@ function renderBlock(b: Block): ReactNode {
       );
     case "status":
       return (
-        <p className="text-xs text-slate-500">
-          💬 {b.message}
+        <p className="text-xs text-slate-400">
+          {b.message}
         </p>
       );
     case "tool_call":
       return <ToolCallCard call={b.call} result={b.result} index={0} />;
     case "analysis":
       return (
-        <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-3">
-          <p className="mb-1 text-xs font-medium text-violet-700">
-            🧠 综合分析{" "}
+        <div className="rounded-lg border border-violet-500/20 bg-violet-500/10 p-3">
+          <p className="mb-1 text-xs font-medium text-violet-300">
+            综合分析{" "}
             {b.info.information_sufficient
-              ? "（信息已充分 ✅）"
-              : "（信息不足，继续补充搜索 🔄）"}
+              ? "（信息已充分）"
+              : "（信息不足，继续补充搜索）"}
           </p>
-          <p className="whitespace-pre-wrap text-sm text-slate-700">{b.info.synthesized_info}</p>
+          <p className="whitespace-pre-wrap text-sm text-slate-300">{b.info.synthesized_info}</p>
         </div>
       );
     case "rejection":
       return (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3">
-          <p className="mb-1 text-xs font-medium text-amber-700">🚫 不适合深度研究</p>
-          <p className="text-sm text-slate-700">{b.info.reason}</p>
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
+          <p className="mb-1 text-xs font-medium text-amber-300">不适合深度研究</p>
+          <p className="text-sm text-slate-300">{b.info.reason}</p>
           <p className="mt-1 text-xs text-slate-500">已跳过搜索流程，生成说明性结果。</p>
         </div>
       );
     case "report_ready":
       return (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          📄 报告已生成（report_id: {b.reportId}）
+        <p className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+          报告已生成（report_id: {b.reportId}）
         </p>
       );
     case "error":
       return (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          ❌ {b.message}
+        <p className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+          {b.message}
         </p>
       );
     case "cancelled":
       return (
-        <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-          ⏹️ 任务已被取消
+        <p className="rounded-lg border border-slate-600/30 bg-slate-700/20 px-3 py-2 text-sm text-slate-400">
+          任务已被取消
         </p>
       );
     case "done":
       return (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          🏁 研究任务已完成
+        <p className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+          研究任务已完成
         </p>
       );
     default:
@@ -246,6 +247,7 @@ export function ResearchTimeline() {
   }
 
   const statusMeta = taskStatusMeta[currentTask.status];
+  const StatusIcon = statusMeta.Icon;
   const isEmpty = events.length === 0;
 
   return (
@@ -254,25 +256,26 @@ export function ResearchTimeline() {
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-3">
           <Badge variant={statusMeta.tone} className="text-sm">
-            <span>{statusMeta.icon}</span>
+            <StatusIcon className={cn("h-3.5 w-3.5", currentTask.status === "running" && "animate-spin")} />
             {statusMeta.label}
           </Badge>
-          <span className="text-xs text-slate-400">
+          <span className="flex items-center gap-1 text-xs text-slate-400">
+            <Calendar className="h-3.5 w-3.5" />
             更新于 {formatDateTime(currentTask.updated_at ?? currentTask.created_at)}
           </span>
-          <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-slate-500">
+          <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-slate-400">
             <span
               className={cn(
                 "size-2 rounded-full",
-                wsConnected ? "bg-emerald-500" : "bg-slate-300",
+                wsConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.6)]" : "bg-slate-600",
               )}
             />
             {wsConnected ? "实时连接中" : "未连接（自动重连中）"}
           </span>
         </div>
         {currentTask.error && (
-          <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            ❌ {currentTask.error}
+          <p className="mt-3 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+            {currentTask.error}
           </p>
         )}
       </Card>
@@ -293,14 +296,14 @@ export function ResearchTimeline() {
       {/* 全局计划 */}
       {!isEmpty && globalPlan && (
         <Card className="p-4">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700">📋 研究计划</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-200">研究计划</h3>
           <ol className="space-y-2">
             {globalPlan.map((step, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-semibold text-indigo-300 ring-1 ring-inset ring-indigo-500/20">
                   {i + 1}
                 </span>
-                <span className="text-slate-700">{step}</span>
+                <span className="text-slate-300">{step}</span>
               </li>
             ))}
           </ol>
@@ -321,11 +324,11 @@ export function ResearchTimeline() {
             <section key={`s-${si}`}>
               <div className="mb-2 flex items-center gap-2">
                 <span className="text-base">{sec.header.icon}</span>
-                <h3 className="text-sm font-semibold text-slate-800">{sec.header.label}</h3>
-                <span className="text-xs text-slate-400">{formatDateTime(sec.header.timestamp)}</span>
+                <h3 className="text-sm font-semibold text-slate-200">{sec.header.label}</h3>
+                <span className="text-xs text-slate-500">{formatDateTime(sec.header.timestamp)}</span>
                 <Separator className="ml-2 flex-1" />
               </div>
-              <div className="space-y-2 border-l-2 border-slate-200 pl-4">
+              <div className="space-y-2 border-l border-slate-700/50 pl-4">
                 {renderItems(sec.items, `i-${si}`)}
               </div>
             </section>

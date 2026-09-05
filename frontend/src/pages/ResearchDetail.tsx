@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, Loader2, StopCircle } from "lucide-react";
 import { ResearchTimeline } from "../components/research/ResearchTimeline";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -63,6 +64,7 @@ export function ResearchDetail() {
   }
 
   const meta = taskStatusMeta[currentTask.status];
+  const MetaIcon = meta.Icon;
   const canCancel = currentTask.status === "pending" || currentTask.status === "running";
   const rejection = [...events].reverse().find((e) => e.type === "rejection");
 
@@ -77,18 +79,22 @@ export function ResearchDetail() {
 
   return (
     <div className="space-y-5">
-      <Link to="/" className="inline-flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-slate-600">
-        ← 返回研究台
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-slate-200"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        返回研究台
       </Link>
 
       {/* 任务头 */}
       <Card className="p-5">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="min-w-0 flex-1 break-all text-lg font-bold text-slate-900">
+          <h1 className="min-w-0 flex-1 break-all text-lg font-bold text-slate-100">
             {currentTask.topic}
           </h1>
           <Badge variant={meta.tone} className="text-sm">
-            <span>{meta.icon}</span>
+            <MetaIcon className={cn("h-3.5 w-3.5", currentTask.status === "running" && "animate-spin")} />
             {meta.label}
           </Badge>
           {canCancel && (
@@ -98,37 +104,45 @@ export function ResearchDetail() {
               loading={cancelling}
               disabled={cancelling}
               onClick={() => void handleCancel()}
-              className="text-slate-600 hover:text-red-600"
+              className="text-slate-300 hover:text-rose-300"
             >
-              ⏹️ 取消任务
+              <StopCircle className="h-4 w-4" />
+              取消任务
             </Button>
           )}
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
           <span>
             任务 ID：
-            <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">{currentTask.id}</code>
+            <code className="rounded bg-slate-800/80 px-1.5 py-0.5 font-mono text-slate-300">
+              {currentTask.id}
+            </code>
           </span>
           <span>创建于 {formatDateTime(currentTask.created_at)}</span>
           <span>更新于 {formatDateTime(currentTask.updated_at)}</span>
           <span
             className={cn(
               "inline-flex items-center gap-1.5",
-              wsConnected ? "text-emerald-600" : "text-slate-400",
+              wsConnected ? "text-emerald-400" : "text-slate-500",
             )}
           >
-            <span className={cn("size-2 rounded-full", wsConnected ? "bg-emerald-500" : "bg-slate-300")} />
+            <span
+              className={cn(
+                "size-2 rounded-full",
+                wsConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.6)]" : "bg-slate-600",
+              )}
+            />
             {wsConnected ? "实时连接" : "未连接"}
           </span>
         </div>
         {rejection && (
-          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            🚫 该输入不适合作为深度研究主题：{rejection.reason}
+          <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            该输入不适合作为深度研究主题：{rejection.reason}
           </p>
         )}
         {currentTask.error && (
-          <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            ❌ {currentTask.error}
+          <p className="mt-3 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+            {currentTask.error}
           </p>
         )}
       </Card>
@@ -136,8 +150,11 @@ export function ResearchDetail() {
       {/* Tab：时间线 / 报告 */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="timeline">🕐 执行时间线</TabsTrigger>
-          <TabsTrigger value="report">📄 研究报告</TabsTrigger>
+          <TabsTrigger value="timeline">
+            <Loader2 className="mr-1 h-3.5 w-3.5" />
+            执行时间线
+          </TabsTrigger>
+          <TabsTrigger value="report">研究报告</TabsTrigger>
         </TabsList>
         <TabsContent value="timeline">
           <ResearchTimeline />

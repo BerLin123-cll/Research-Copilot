@@ -1,5 +1,13 @@
 import type { ResearchTask } from "../types";
 import type { StatusTone } from "../components/ui/badge";
+import {
+  CheckCircle2,
+  Clock,
+  Loader2,
+  StopCircle,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
 
 /** 合并多个 class 名称，过滤 falsy 值 */
 export function cn(...parts: Array<string | null | false | undefined>): string {
@@ -32,13 +40,13 @@ export function formatBytes(bytes: number): string {
 /** 研究任务状态 → 文案/色板/图标 */
 export const taskStatusMeta: Record<
   ResearchTask["status"],
-  { label: string; tone: StatusTone; icon: string }
+  { label: string; tone: StatusTone; Icon: LucideIcon }
 > = {
-  pending: { label: "等待中", tone: "neutral", icon: "🕐" },
-  running: { label: "进行中", tone: "info", icon: "⏳" },
-  completed: { label: "已完成", tone: "success", icon: "✅" },
-  failed: { label: "失败", tone: "danger", icon: "❌" },
-  cancelled: { label: "已取消", tone: "neutral", icon: "⏹️" },
+  pending: { label: "等待中", tone: "neutral", Icon: Clock },
+  running: { label: "进行中", tone: "info", Icon: Loader2 },
+  completed: { label: "已完成", tone: "success", Icon: CheckCircle2 },
+  failed: { label: "失败", tone: "danger", Icon: XCircle },
+  cancelled: { label: "已取消", tone: "neutral", Icon: StopCircle },
 };
 
 /** 文档状态（后端字符串）→ 文案/色板 */

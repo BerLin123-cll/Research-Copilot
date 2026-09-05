@@ -5,14 +5,14 @@ export type StatusTone = "neutral" | "info" | "success" | "danger" | "warning";
 export type BadgeVariant = "default" | "secondary" | "outline" | StatusTone;
 
 const badgeVariants: Record<BadgeVariant, string> = {
-  default: "border-blue-200 bg-blue-50 text-blue-700",
-  secondary: "border-slate-200 bg-slate-100 text-slate-600",
-  outline: "border-slate-300 bg-white text-slate-600",
-  neutral: "border-slate-200 bg-slate-100 text-slate-600",
-  info: "border-blue-200 bg-blue-50 text-blue-700",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  danger: "border-red-200 bg-red-50 text-red-700",
-  warning: "border-amber-200 bg-amber-50 text-amber-700",
+  default: "border-indigo-400/20 bg-indigo-500/15 text-indigo-300",
+  secondary: "border-slate-600/20 bg-slate-700/30 text-slate-300",
+  outline: "border-slate-600/30 bg-transparent text-slate-400",
+  neutral: "border-slate-600/20 bg-slate-700/30 text-slate-300",
+  info: "border-sky-400/20 bg-sky-500/15 text-sky-300",
+  success: "border-emerald-400/20 bg-emerald-500/15 text-emerald-300",
+  danger: "border-rose-400/20 bg-rose-500/15 text-rose-300",
+  warning: "border-amber-400/20 bg-amber-500/15 text-amber-300",
 };
 
 export interface BadgeProps extends ComponentProps<"span"> {

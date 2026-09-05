@@ -6,11 +6,13 @@ type ButtonVariant = "default" | "secondary" | "outline" | "ghost" | "destructiv
 type ButtonSize = "default" | "sm" | "lg" | "icon";
 
 const variantClasses: Record<ButtonVariant, string> = {
-  default: "bg-blue-600 text-white shadow-sm hover:bg-blue-700",
-  secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200",
-  outline: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
-  ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-  destructive: "bg-red-600 text-white shadow-sm hover:bg-red-700",
+  default:
+    "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-600 hover:to-violet-600",
+  secondary: "bg-slate-800/60 text-slate-100 hover:bg-slate-700/60 border border-white/5",
+  outline: "border border-slate-600/40 bg-slate-900/40 text-slate-200 hover:bg-slate-800/60",
+  ghost: "text-slate-300 hover:bg-white/5 hover:text-slate-100",
+  destructive:
+    "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-red-600",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -42,8 +44,8 @@ export function Button({
       type="button"
       disabled={finalDisabled}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-1",
+        "inline-flex shrink-0 items-center justify-center gap-2 rounded-xl font-medium transition-all",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1",
         "disabled:pointer-events-none disabled:opacity-50",
         variantClasses[variant],
         sizeClasses[size],

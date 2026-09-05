@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Link2, Upload } from "lucide-react";
 import type { DocumentItem } from "../../types";
 import { api } from "../../lib/api";
 import { formatBytes } from "../../lib/utils";
@@ -58,20 +59,22 @@ export function DocumentUploader({ onUploaded }: DocumentUploaderProps) {
   return (
     <Card className="space-y-4 p-4">
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-800">📄 上传文档</h3>
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-100">
+          <Upload className="h-4 w-4 text-indigo-400" />
+          上传文档
+        </h3>
         <div className="flex gap-2">
           <Input
             ref={fileRef}
             type="file"
             accept={ACCEPT}
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-slate-600 hover:file:bg-slate-200"
           />
           <Button onClick={() => void doUpload()} loading={uploading} disabled={!file}>
             上传
           </Button>
         </div>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-slate-500">
           支持 .pdf / .md / .txt
           {file && ` · 已选择：${file.name}（${formatBytes(file.size)}）`}
         </p>
@@ -80,7 +83,10 @@ export function DocumentUploader({ onUploaded }: DocumentUploaderProps) {
       <Separator />
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-800">🌐 URL 入库</h3>
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-100">
+          <Link2 className="h-4 w-4 text-sky-400" />
+          URL 入库
+        </h3>
         <div className="flex gap-2">
           <Input
             value={url}
@@ -94,7 +100,7 @@ export function DocumentUploader({ onUploaded }: DocumentUploaderProps) {
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-rose-400">{error}</p>}
     </Card>
   );
 }
